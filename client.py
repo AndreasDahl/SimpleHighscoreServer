@@ -8,7 +8,7 @@ import pdb
 
 class Chatclient:
     BUFFERSIZE = 1024
-    
+
     def __init__(self):
         self.input_from = []
         self.ns_socket = None
@@ -17,7 +17,7 @@ class Chatclient:
 
     def connect_to_ns(self, ns_ip, ns_port):
         """
-        Establish a connection to the name server and 
+        Establish a connection to the name server and
         preform the required handshake
         """
         try:
@@ -32,10 +32,6 @@ class Chatclient:
             self.ns_socket = None
             print "failed to connect to the given address"
             print e
-        # You need to setup the connection and preform the handshake here.
-        # First you should initiate the socket and connect to the name
-        # server before starting the handshake
-
 
     def disconnect_from_server(self):
         """

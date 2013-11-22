@@ -9,27 +9,27 @@ import db
 
 """
     Protocol:
-    
+
     Initial responses:
     100 CONNECTED
     101 TAKEN
     102 HANDSHAKE EXPECTED
-    
+
     Post responses:
     200 POST SUCCESS
     201 POST REJECTED
     202 TIME INVALID
-    
+
     Lookup responses
     300 INFO <number_of_entries> <name> <time> <name> <time> ...
     301 BAD REQUEST
 
     Leave responses:
     400 BYE
-    
+
     Generic Responses:
     500 BAD FORMAT
-    
+
     Supported Requests:
     HELLO
 
@@ -38,7 +38,7 @@ import db
     post a time of 1:12.0000 under the name Andreas
 
     TOP <n>
-    
+
     LEAVE
     Notify the server, that you are leaving.
 """
@@ -49,7 +49,7 @@ class HighscoreServer:
     BUFFERSIZE = 1024
     DEFAULT_TIMEOUT = 60
     DB_PATH = 'scoreboard.sqlite'
-    
+
     def __init__(self):
         self.input_from = []
         self.socks = []
@@ -85,9 +85,9 @@ class HighscoreServer:
         while(running):
             # Listen to all connected client sockets and the server socket
             ready_to_read, _, _ = \
-                    select.select(self.socks, 
-                    [], 
-                    [], 
+                    select.select(self.socks,
+                    [],
+                    [],
                     self.DEFAULT_TIMEOUT)
             for readable in ready_to_read:
                 if readable == self.server:
@@ -101,7 +101,7 @@ class HighscoreServer:
 
     def connect_to_client(self, sock):
         """
-        Establish a connection to a new client and 
+        Establish a connection to a new client and
         preform the required handshake
         """
         conn, addr = self.server.accept()
@@ -121,7 +121,7 @@ class HighscoreServer:
         Parse a request from a client and preform the appropriate actions
         """
         tokens = request.split()
-        
+
         if tokens[0] == "POST" and len(tokens) == 3:
             self.logger.info("User wishes to post a time")
             self.post_time(sock, tokens[1], tokens[2])
@@ -134,7 +134,7 @@ class HighscoreServer:
         else:
             self.logger.info("Unrecognized command '%s' ignored" % request)
             sock.send("500 BAD FORMAT")
-    
+
     def post_time(self, sock, name, time):
         try:
             parsed_time = long(time)
@@ -143,10 +143,10 @@ class HighscoreServer:
         except ValueError:
             response = '202 INVALID TIME'
         sock.send(response)
-    
+
     def send_top(self, sock, unparsed_n):
         """
-        Send a list of the top n times. Response should comply with the protocol
+        Send a list of the top n entries. Response should comply with the protocol
         """
         try:
             n = int(unparsed_n)
