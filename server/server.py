@@ -93,12 +93,16 @@ class HighscoreServer:
                 if readable == self.server:
                     self.connect_to_client(readable);
                 else:
-                    request = readable.recv(self.BUFFERSIZE)
-                    if request == '':
+                    try:
+                        request = readable.recv(self.BUFFERSIZE)
+                        if request == '':
+                            self.leave_client(readable)
+                        else:
+                            self.parse_request(request, readable)
+                    except Exception as e:
+                        self.logger.error(e)
                         self.leave_client(readable)
-                    else:
-                        self.parse_request(request, readable)
-
+            
     def connect_to_client(self, sock):
         """
         Establish a connection to a new client and 
@@ -109,11 +113,11 @@ class HighscoreServer:
         msg = readl[0].recv(self.BUFFERSIZE)
         tokens = msg.split()
         if len(tokens) == 1 and tokens[0] == 'HELLO':
-            response = '100 CONNECTED'
+            response = '100 CONNECTED\n'
             self.socks.append(conn)
             self.logger.info("%s connected to the server" % str(addr))
         else:
-            response = '102 HANDSHAKE EXPECTED'
+            response = '102 HANDSHAKE EXPECTED\n'
         conn.send(response)
 
     def parse_request(self, request, sock):
@@ -133,15 +137,15 @@ class HighscoreServer:
             self.send_top(sock, tokens[1])
         else:
             self.logger.info("Unrecognized command '%s' ignored" % request)
-            sock.send("500 BAD FORMAT")
+            sock.send("500 BAD FORMAT\n")
     
     def post_time(self, sock, name, time):
         try:
             parsed_time = long(time)
             self.scores.post(name, parsed_time)
-            response = '200 SUCCESS'
+            response = '200 SUCCESS\n'
         except ValueError:
-            response = '202 INVALID TIME'
+            response = '202 INVALID TIME\n'
         sock.send(response)
     
     def send_top(self, sock, unparsed_n):
@@ -154,8 +158,9 @@ class HighscoreServer:
             msg = "300 INFO %d" % len(rows)
             for row in rows:
                 msg += " %s %d" % (row[0], row[1])
+            msg += "\n"
         except Exception as e:
-            msg = "301 BAD REQUEST"
+            msg = "301 BAD REQUEST\n"
             print e
         sock.send(msg)
 
@@ -164,11 +169,16 @@ class HighscoreServer:
         """
         Close the connection properly to a leaving client
         """
-        addr = sock.getsockname()
-        sock.send('400 BYE')
-        sock.close()
-        self.socks.remove(sock)
-        self.logger.info("%s successfully disconnected from the server", addr)
+        try:
+            addr = sock.getsockname()
+            sock.send('400 BYE\n')
+            self.logger.info("%s successfully disconnected from the server", addr)
+        except Exception as e:
+            self.logger.info("forcebly disconnecting client %s",
+                             addr if addr != None else "")
+        finally:
+            sock.close()
+            self.socks.remove(sock)
 
 
 # Run the server.
